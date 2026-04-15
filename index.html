@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kingdom Advisor - An interactive expert system game demonstrating AI decision support concepts including knowledge base, inference engine, forward chaining, and explanation facility.">
+    <title>Kingdom Advisor — Expert System Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ===== CSS RESET & VARIABLES ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --bg-glass: rgba(255, 255, 255, 0.04);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-gold: #f59e0b;
+            --accent-gold-glow: rgba(245, 158, 11, 0.3);
+            --accent-emerald: #10b981;
+            --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+            --accent-rose: #f43f5e;
+            --accent-rose-glow: rgba(244, 63, 94, 0.25);
+            --accent-blue: #3b82f6;
+            --accent-blue-glow: rgba(59, 130, 246, 0.25);
+            --accent-purple: #a855f7;
+            --accent-purple-glow: rgba(168, 85, 247, 0.25);
+            --gradient-gold: linear-gradient(135deg, #f59e0b, #d97706);
+            --gradient-emerald: linear-gradient(135deg, #10b981, #059669);
+            --gradient-hero: linear-gradient(160deg, #0a0e17 0%, #1a1040 40%, #0f2027 100%);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            --shadow-glow-gold: 0 0 30px rgba(245, 158, 11, 0.15);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --font-display: 'Cinzel', serif;
+            --font-body: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ===== ANIMATED BACKGROUND ===== */
+        .bg-effects {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bg-effects .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.12;
+            animation: orbFloat 20s ease-in-out infinite;
+        }
+
+        .bg-effects .orb:nth-child(1) {
+            width: 500px; height: 500px;
+            background: var(--accent-purple);
+            top: -10%; left: -5%;
+            animation-duration: 25s;
+        }
+
+        .bg-effects .orb:nth-child(2) {
+            width: 400px; height: 400px;
+            background: var(--accent-gold);
+            top: 50%; right: -10%;
+            animation-duration: 20s;
+            animation-delay: -5s;
+        }
+
+        .bg-effects .orb:nth-child(3) {
+            width: 350px; height: 350px;
+            background: var(--accent-emerald);
+            bottom: -5%; left: 30%;
+            animation-duration: 22s;
+            animation-delay: -10s;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -40px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+
+        /* ===== PARTICLES ===== */
+        .particles {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleRise linear infinite;
+        }
+
+        @keyframes particleRise {
+            0% { opacity: 0; transform: translateY(100vh) scale(0); }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+        }
+
+        /* ===== LAYOUT ===== */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            text-align: center;
+            padding: 40px 0 30px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header .crown-icon {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 8px;
+            animation: crownBounce 3s ease-in-out infinite;
+        }
+
+        @keyframes crownBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .header h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, #f59e0b, #fbbf24, #f59e0b);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s ease-in-out infinite;
+            letter-spacing: 1px;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .header .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        .header .badge {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-gold);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.08);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .stat-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(12px);
+            transition: var(--transition-smooth);
+        }
+
+        .stat-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .stat-card .stat-icon { font-size: 1.4rem; }
+        .stat-card .stat-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .stat-card .stat-value { font-size: 1.1rem; font-weight: 700; font-family: var(--font-mono); }
+
+        .stat-value.gold { color: var(--accent-gold); }
+        .stat-value.emerald { color: var(--accent-emerald); }
+        .stat-value.rose { color: var(--accent-rose); }
+        .stat-value.blue { color: var(--accent-blue); }
+
+        /* ===== NAV TABS ===== */
+        .nav-tabs {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .nav-tab {
+            padding: 10px 22px;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-tab.active {
+            color: var(--accent-gold);
+            border-color: rgba(245, 158, 11, 0.4);
+            background: rgba(245, 158, 11, 0.08);
+            box-shadow: var(--shadow-glow-gold);
+        }
+
+        /* ===== PANELS ===== */
+        .panel {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .panel.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== CARD ===== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--accent-gold);
+        }
+
+        /* ===== GAME PANEL ===== */
+        .scenario-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(168, 85, 247, 0.04));
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scenario-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-gold);
+        }
+
+        .scenario-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-gold);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .scenario-text {
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        .scenario-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .scenario-meta span {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ===== CHOICES ===== */
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .choice-btn {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 18px 20px;
+            border-radius: var(--radius-md);
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            font-size: 0.92rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            text-align: left;
+            font-family: var(--font-body);
+            line-height: 1.5;
+        }
+
+        .choice-btn:hover {
+            border-color: rgba(245, 158, 11, 0.4);
+            background: rgba(245, 158, 11, 0.06);
+            transform: translateX(4px);
+        }
+
+        .choice-btn:active {
+            transform: translateX(2px) scale(0.99);
+        }
+
+        .choice-letter {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            font-family: var(--font-mono);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            color: var(--accent-gold);
+        }
+
+        .choice-btn.correct {
+            border-color: rgba(16, 185, 129, 0.5);
+            background: rgba(16, 185, 129, 0.1);
+            animation: pulseGreen 0.6s ease-out;
+        }
+
+        .choice-btn.incorrect {
+            border-color: rgba(244, 63, 94, 0.5);
+            background: rgba(244, 63, 94, 0.1);
+            animation: pulseRed 0.6s ease-out;
+        }
+
+        @keyframes pulseGreen {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            100% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulseRed {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+            100% { box-shadow: 0 0 0 12px rgba(244, 63, 94, 0); }
+        }
+
+        /* ===== FEEDBACK BOX ===== */
+        .feedback-box {
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-top: 16px;
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .feedback-box.show { display: block; }
+
+        .feedback-box.success {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .feedback-box.failure {
+            background: rgba(244, 63, 94, 0.08);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        .feedback-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feedback-box.success .feedback-title { color: var(--accent-emerald); }
+        .feedback-box.failure .feedback-title { color: var(--accent-rose); }
+
+        .feedback-text {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== EXPLANATION CHAIN ===== */
+        .explanation-chain {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            border-radius: var(--radius-md);
+        }
+
+        .chain-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-blue);
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chain-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .chain-step:last-child { border-bottom: none; }
+
+        .chain-node {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-family: var(--font-mono);
+        }
+
+        .chain-content {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .chain-content strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ===== NEXT BUTTON ===== */
+        .btn-next {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0a0e17;
+            background: var(--gradient-gold);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            margin-top: 20px;
+            font-family: var(--font-body);
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-next:active { transform: translateY(0); }
+
+        .btn-next:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== KNOWLEDGE BASE PANEL ===== */
+        .kb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 14px;
+        }
+
+        .kb-rule {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            transition: var(--transition-smooth);
+        }
+
+        .kb-rule:hover {
+            border-color: rgba(168, 85, 247, 0.3);
+            background: rgba(168, 85, 247, 0.04);
+        }
+
+        .kb-rule-id {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--accent-purple);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .kb-rule-if {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .kb-rule-if code {
+            font-family: var(--font-mono);
+            background: rgba(168, 85, 247, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            color: var(--accent-purple);
+        }
+
+        .kb-rule-then {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .kb-rule-then code {
+            font-family: var(--font-mono);
+            background: rgba(245, 158, 11, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            color: var(--accent-gold);
+        }
+
+        /* ===== INFERENCE LOG PANEL ===== */
+        .log-container {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .log-container::-webkit-scrollbar { width: 6px; }
+        .log-container::-webkit-scrollbar-track { background: transparent; }
+        .log-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        .log-entry {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .log-entry:last-child { border-bottom: none; }
+
+        .log-timestamp {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            min-width: 50px;
+            padding-top: 2px;
+        }
+
+        .log-icon {
+            font-size: 1.1rem;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .log-message {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .log-message strong { color: var(--text-primary); }
+
+        .log-entry.fire .log-message { color: var(--accent-emerald); }
+        .log-entry.error .log-message { color: var(--accent-rose); }
+        .log-entry.info .log-message { color: var(--accent-blue); }
+
+        /* ===== ABOUT PANEL ===== */
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .about-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            transition: var(--transition-smooth);
+        }
+
+        .about-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+        }
+
+        .about-card .icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .about-card h3 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: var(--accent-gold);
+        }
+
+        .about-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-container {
+            margin-bottom: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .progress-value {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        .progress-track {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: var(--gradient-gold);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: progressShine 2s ease-in-out infinite;
+        }
+
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* ===== GAME OVER ===== */
+        .game-over {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .game-over .trophy { font-size: 4rem; margin-bottom: 16px; display: block; animation: crownBounce 2s ease-in-out infinite; }
+
+        .game-over h2 {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            color: var(--accent-gold);
+            margin-bottom: 8px;
+        }
+
+        .game-over .score-text {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .game-over .final-stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .final-stat {
+            text-align: center;
+            padding: 16px 24px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+        }
+
+        .final-stat .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .final-stat .label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .btn-restart {
+            padding: 14px 36px;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0a0e17;
+            background: var(--gradient-gold);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-family: var(--font-body);
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+
+        .footer a {
+            color: var(--accent-gold);
+            text-decoration: none;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .app-container { padding: 12px; }
+            .card { padding: 20px; }
+            .stats-bar { gap: 8px; }
+            .stat-card { padding: 10px 14px; }
+            .kb-grid { grid-template-columns: 1fr; }
+            .about-grid { grid-template-columns: 1fr; }
+            .game-over .final-stats { flex-direction: column; align-items: center; }
+        }
+
+        /* ===== TOOLTIP ===== */
+        .tooltip-trigger {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dashed var(--text-muted);
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+        .empty-state p { font-size: 0.9rem; }
+
+        /* ===== START SCREEN ===== */
+        .start-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .start-screen .shield { font-size: 5rem; display: block; margin-bottom: 20px; animation: crownBounce 3s ease-in-out infinite; }
+
+        .start-screen h2 {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            color: var(--accent-gold);
+            margin-bottom: 10px;
+        }
+
+        .start-screen p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 500px;
+            margin: 0 auto 12px;
+            line-height: 1.7;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 24px 0;
+        }
+
+        .diff-btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-glass);
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .diff-btn:hover {
+            border-color: rgba(245, 158, 11, 0.3);
+            color: var(--text-primary);
+        }
+
+        .diff-btn.selected {
+            border-color: var(--accent-gold);
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-gold);
+        }
+
+        .btn-start {
+            padding: 14px 48px;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0a0e17;
+            background: var(--gradient-gold);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-family: var(--font-body);
+            margin-top: 10px;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+        }
+
+        /* ===== CONCEPTS TAG ===== */
+        .concept-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .concept-tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+        }
+
+        .concept-tag.kb { color: var(--accent-purple); border-color: rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.08); }
+        .concept-tag.ie { color: var(--accent-blue); border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.08); }
+        .concept-tag.fc { color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.08); }
+        .concept-tag.ef { color: var(--accent-gold); border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.08); }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-effects">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+    <div class="particles" id="particles"></div>
+
+    <!-- App Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <span class="crown-icon">👑</span>
+            <h1>Kingdom Advisor</h1>
+            <p class="subtitle">An Interactive Expert System for Royal Decision Making</p>
+            <span class="badge">Intelligent Decision Support</span>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-card">
+                <span class="stat-icon">⚔️</span>
+                <div>
+                    <div class="stat-label">Scenario</div>
+                    <div class="stat-value gold" id="statScenario">0 / 0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🏆</span>
+                <div>
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value emerald" id="statScore">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">✅</span>
+                <div>
+                    <div class="stat-label">Correct</div>
+                    <div class="stat-value blue" id="statCorrect">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🔥</span>
+                <div>
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value rose" id="statStreak">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nav Tabs -->
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" data-tab="game" id="tabGame">🎮 Play</button>
+            <button class="nav-tab" data-tab="knowledge" id="tabKnowledge">📚 Knowledge Base</button>
+            <button class="nav-tab" data-tab="log" id="tabLog">📋 Inference Log</button>
+            <button class="nav-tab" data-tab="about" id="tabAbout">ℹ️ How It Works</button>
+        </nav>
+
+        <!-- ===== GAME PANEL ===== -->
+        <div class="panel active" id="panelGame">
+            <!-- Start Screen -->
+            <div class="card" id="startScreen">
+                <div class="start-screen">
+                    <span class="shield">🏰</span>
+                    <h2>Welcome, Royal Advisor</h2>
+                    <p>You serve as the trusted advisor to the monarch. Your kingdom faces threats, opportunities, and dilemmas. Use your wisdom to guide the ruler through challenging decisions.</p>
+                    <p style="font-size:0.82rem; color:var(--text-muted);">This game demonstrates <strong style="color:var(--text-primary);">Expert System</strong> concepts from Intelligent Decision Support Systems.</p>
+
+                    <div class="concept-tags">
+                        <span class="concept-tag kb">Knowledge Base</span>
+                        <span class="concept-tag ie">Inference Engine</span>
+                        <span class="concept-tag fc">Forward Chaining</span>
+                        <span class="concept-tag ef">Explanation Facility</span>
+                    </div>
+
+                    <div class="difficulty-selector" id="difficultySelector">
+                        <button class="diff-btn" data-diff="easy" id="diffEasy">🌱 Apprentice</button>
+                        <button class="diff-btn selected" data-diff="medium" id="diffMedium">⚔️ Knight</button>
+                        <button class="diff-btn" data-diff="hard" id="diffHard">👑 Monarch</button>
+                    </div>
+
+                    <button class="btn-start" id="btnStart" onclick="startGame()">Begin Your Counsel ➜</button>
+                </div>
+            </div>
+
+            <!-- Game Area (hidden initially) -->
+            <div id="gameArea" style="display:none;">
+                <!-- Progress -->
+                <div class="progress-container">
+                    <div class="progress-header">
+                        <span class="progress-label">Campaign Progress</span>
+                        <span class="progress-value" id="progressValue">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <!-- Scenario Card -->
+                <div class="card" id="scenarioCard">
+                    <div class="scenario-box">
+                        <div class="scenario-label">Royal Scenario</div>
+                        <div class="scenario-text" id="scenarioText"></div>
+                        <div class="scenario-meta" id="scenarioMeta"></div>
+                    </div>
+
+                    <div class="choices-grid" id="choicesGrid"></div>
+
+                    <div class="feedback-box" id="feedbackBox">
+                        <div class="feedback-title" id="feedbackTitle"></div>
+                        <div class="feedback-text" id="feedbackText"></div>
+                        <div class="explanation-chain" id="explanationChain" style="display:none">
+                            <div class="chain-title">🔗 Inference Chain (Forward Chaining)</div>
+                            <div id="chainSteps"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn-next" id="btnNext" onclick="nextScenario()" style="display:none">Next Scenario ➜</button>
+                </div>
+            </div>
+
+            <!-- Game Over -->
+            <div id="gameOver" style="display:none;">
+                <div class="card">
+                    <div class="game-over">
+                        <span class="trophy">🏆</span>
+                        <h2 id="gameOverTitle">Campaign Complete!</h2>
+                        <p class="score-text" id="gameOverText"></p>
+                        <div class="final-stats" id="finalStats"></div>
+                        <button class="btn-restart" onclick="resetGame()">🔄 New Campaign</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== KNOWLEDGE BASE PANEL ===== -->
+        <div class="panel" id="panelKnowledge">
+            <div class="card">
+                <div class="card-title">📚 Knowledge Base Rules</div>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:16px;">
+                    The knowledge base contains IF-THEN rules that the inference engine evaluates using <strong style="color:var(--text-primary)">forward chaining</strong>. Each rule maps conditions (facts) to recommended actions.
+                </p>
+                <div class="kb-grid" id="kbGrid"></div>
+            </div>
+        </div>
+
+        <!-- ===== INFERENCE LOG PANEL ===== -->
+        <div class="panel" id="panelLog">
+            <div class="card">
+                <div class="card-title">📋 Inference Engine Log</div>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:16px;">
+                    Real-time trace of the inference engine's reasoning process. Shows which rules were evaluated, fired, and what conclusions were reached.
+                </p>
+                <div class="log-container" id="logContainer">
+                    <div class="empty-state">
+                        <span class="icon">🔍</span>
+                        <p>No inference steps yet. Start playing to see the engine in action!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ABOUT PANEL ===== -->
+        <div class="panel" id="panelAbout">
+            <div class="card">
+                <div class="card-title">ℹ️ Expert System Components</div>
+                <div class="about-grid">
+                    <div class="about-card">
+                        <span class="icon">📚</span>
+                        <h3>Knowledge Base (KB)</h3>
+                        <p>A structured repository of IF-THEN rules encoding domain expertise. In this game, rules map kingdom conditions (threats, resources, morale) to recommended royal decisions.</p>
+                    </div>
+                    <div class="about-card">
+                        <span class="icon">⚙️</span>
+                        <h3>Inference Engine (IE)</h3>
+                        <p>The core reasoning mechanism that processes facts against the knowledge base. It determines which rules apply to the current situation and derives conclusions.</p>
+                    </div>
+                    <div class="about-card">
+                        <span class="icon">🔗</span>
+                        <h3>Forward Chaining</h3>
+                        <p>A data-driven reasoning strategy. Starting from known facts, the engine matches conditions in rules, fires applicable rules, and generates new facts until a conclusion is reached.</p>
+                    </div>
+                    <div class="about-card">
+                        <span class="icon">💬</span>
+                        <h3>Explanation Facility</h3>
+                        <p>Provides transparency into the reasoning process, showing WHY a particular recommendation was made. It traces the chain of rules and facts that led to the conclusion.</p>
+                    </div>
+                    <div class="about-card">
+                        <span class="icon">📝</span>
+                        <h3>Working Memory</h3>
+                        <p>A temporary store of currently known facts. As the inference engine fires rules, new facts are added to working memory, potentially triggering additional rules.</p>
+                    </div>
+                    <div class="about-card">
+                        <span class="icon">🎯</span>
+                        <h3>Conflict Resolution</h3>
+                        <p>When multiple rules match, a strategy determines which to fire first. Common approaches include specificity (most conditions), recency, and priority-based resolution.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🎓 Learning Objectives</div>
+                <div class="about-grid">
+                    <div class="about-card">
+                        <span class="icon">1️⃣</span>
+                        <h3>Understand Rule-Based Systems</h3>
+                        <p>Learn how domain knowledge is encoded as production rules and how they work together to support complex decision-making.</p>
+                    </div>
+                    <div class="about-card">
+                        <span class="icon">2️⃣</span>
+                        <h3>Master Forward Chaining</h3>
+                        <p>Observe how a data-driven approach builds conclusions step-by-step from initial facts through rule activation.</p>
+                    </div>
+                    <div class="about-card">
+                        <span class="icon">3️⃣</span>
+                        <h3>Appreciate Transparency</h3>
+                        <p>Understand why explainable AI matters — see exactly how the system reaches its recommendations through the explanation facility.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Kingdom Advisor — Expert System Game · Built for <strong>Intelligent Decision Support</strong> Course</p>
+            <p style="margin-top:4px;">Demonstrating Knowledge Base · Inference Engine · Forward Chaining · Explanation Facility</p>
+        </footer>
+    </div>
+
+    <script>
+        // ===== PARTICLE SYSTEM =====
+        (function initParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 25; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDuration = (8 + Math.random() * 12) + 's';
+                p.style.animationDelay = (Math.random() * 15) + 's';
+                p.style.width = (2 + Math.random() * 3) + 'px';
+                p.style.height = p.style.width;
+                container.appendChild(p);
+            }
+        })();
+
+        // ===== KNOWLEDGE BASE =====
+        const knowledgeBase = [
+            // Military / Defense rules
+            {
+                id: 'R1',
+                conditions: ['enemy_approaching', 'army_strong'],
+                conclusion: 'deploy_army',
+                label: 'IF enemy approaching AND army is strong THEN deploy the army',
+                category: 'military'
+            },
+            {
+                id: 'R2',
+                conditions: ['enemy_approaching', 'army_weak'],
+                conclusion: 'seek_alliance',
+                label: 'IF enemy approaching AND army is weak THEN seek alliance with neighbor',
+                category: 'military'
+            },
+            {
+                id: 'R3',
+                conditions: ['enemy_approaching', 'army_weak', 'no_allies'],
+                conclusion: 'fortify_defenses',
+                label: 'IF enemy approaching AND army is weak AND no allies THEN fortify castle defenses',
+                category: 'military'
+            },
+            {
+                id: 'R4',
+                conditions: ['border_skirmish', 'diplomatic_relations_good'],
+                conclusion: 'negotiate_peace',
+                label: 'IF border skirmish AND diplomatic relations good THEN negotiate peace treaty',
+                category: 'military'
+            },
+            {
+                id: 'R5',
+                conditions: ['border_skirmish', 'diplomatic_relations_poor'],
+                conclusion: 'reinforce_border',
+                label: 'IF border skirmish AND diplomatic relations poor THEN reinforce border garrisons',
+                category: 'military'
+            },
+            // Economy rules
+            {
+                id: 'R6',
+                conditions: ['treasury_low', 'trade_routes_open'],
+                conclusion: 'increase_trade_tax',
+                label: 'IF treasury low AND trade routes open THEN increase trade taxation',
+                category: 'economy'
+            },
+            {
+                id: 'R7',
+                conditions: ['treasury_low', 'trade_routes_blocked'],
+                conclusion: 'develop_local_industry',
+                label: 'IF treasury low AND trade routes blocked THEN develop local industry',
+                category: 'economy'
+            },
+            {
+                id: 'R8',
+                conditions: ['famine', 'treasury_high'],
+                conclusion: 'import_food',
+                label: 'IF famine AND treasury high THEN import food from traders',
+                category: 'economy'
+            },
+            {
+                id: 'R9',
+                conditions: ['famine', 'treasury_low'],
+                conclusion: 'ration_supplies',
+                label: 'IF famine AND treasury low THEN ration existing supplies',
+                category: 'economy'
+            },
+            // People / Morale rules
+            {
+                id: 'R10',
+                conditions: ['morale_low', 'taxes_high'],
+                conclusion: 'lower_taxes',
+                label: 'IF morale low AND taxes high THEN lower taxes temporarily',
+                category: 'people'
+            },
+            {
+                id: 'R11',
+                conditions: ['morale_low', 'taxes_fair'],
+                conclusion: 'host_festival',
+                label: 'IF morale low AND taxes fair THEN host a grand festival',
+                category: 'people'
+            },
+            {
+                id: 'R12',
+                conditions: ['plague', 'healers_available'],
+                conclusion: 'deploy_healers',
+                label: 'IF plague AND healers available THEN deploy healers to towns',
+                category: 'people'
+            },
+            {
+                id: 'R13',
+                conditions: ['plague', 'no_healers'],
+                conclusion: 'quarantine_region',
+                label: 'IF plague AND no healers THEN quarantine the affected region',
+                category: 'people'
+            },
+            // Diplomacy rules
+            {
+                id: 'R14',
+                conditions: ['royal_marriage_offer', 'kingdom_needs_ally'],
+                conclusion: 'accept_marriage',
+                label: 'IF royal marriage offer AND kingdom needs ally THEN accept the marriage alliance',
+                category: 'diplomacy'
+            },
+            {
+                id: 'R15',
+                conditions: ['royal_marriage_offer', 'kingdom_strong'],
+                conclusion: 'decline_politely',
+                label: 'IF royal marriage offer AND kingdom strong THEN decline politely, maintain independence',
+                category: 'diplomacy'
+            },
+            {
+                id: 'R16',
+                conditions: ['rebellion_brewing', 'leader_identified'],
+                conclusion: 'negotiate_rebels',
+                label: 'IF rebellion brewing AND leader identified THEN negotiate with rebel leader',
+                category: 'people'
+            },
+            {
+                id: 'R17',
+                conditions: ['rebellion_brewing', 'leader_unknown'],
+                conclusion: 'infiltrate_spies',
+                label: 'IF rebellion brewing AND leader unknown THEN send spies to infiltrate',
+                category: 'people'
+            },
+            {
+                id: 'R18',
+                conditions: ['drought', 'river_nearby'],
+                conclusion: 'build_irrigation',
+                label: 'IF drought AND river nearby THEN build irrigation canals',
+                category: 'economy'
+            },
+        ];
+
+        // ===== SCENARIOS =====
+        const allScenarios = [
+            {
+                text: "Your scouts report a massive enemy army approaching from the east. Your military commanders assure you that your army is battle-hardened and well-supplied.",
+                facts: ['enemy_approaching', 'army_strong'],
+                correctConclusion: 'deploy_army',
+                firedRules: ['R1'],
+                domain: 'Military',
+                difficulty: 'easy',
+                choices: [
+                    { label: 'Deploy the army to intercept them on the open field', conclusion: 'deploy_army' },
+                    { label: 'Seek a hasty alliance with neighboring kingdoms', conclusion: 'seek_alliance' },
+                    { label: 'Fortify the castle and prepare for a siege', conclusion: 'fortify_defenses' },
+                    { label: 'Send emissaries to negotiate a peace treaty', conclusion: 'negotiate_peace' }
+                ],
+                explanation: [
+                    { fact: 'enemy_approaching', text: '<strong>Fact established:</strong> Enemy army detected approaching from the east.' },
+                    { fact: 'army_strong', text: '<strong>Fact established:</strong> Your army is strong and battle-ready.' },
+                    { rule: 'R1', text: '<strong>Rule R1 fires:</strong> IF enemy approaching AND army strong → Deploy the army. This rule has highest specificity for these conditions.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> With a strong army facing an approaching enemy, direct deployment is the optimal strategy. Alliance-seeking is unnecessary when you have strength.' }
+                ]
+            },
+            {
+                text: "An enemy force marches toward your borders, but your army is depleted from a recent conflict. Your soldiers are exhausted and equipment is worn.",
+                facts: ['enemy_approaching', 'army_weak'],
+                correctConclusion: 'seek_alliance',
+                firedRules: ['R2'],
+                domain: 'Military',
+                difficulty: 'easy',
+                choices: [
+                    { label: 'Deploy the weakened army anyway — honor demands it', conclusion: 'deploy_army' },
+                    { label: 'Send urgent messages to ally kingdoms for mutual defense', conclusion: 'seek_alliance' },
+                    { label: 'Surrender and negotiate terms', conclusion: 'surrender' },
+                    { label: 'Ignore the threat and hope they pass', conclusion: 'ignore' }
+                ],
+                explanation: [
+                    { fact: 'enemy_approaching', text: '<strong>Fact established:</strong> Enemy force is marching toward your borders.' },
+                    { fact: 'army_weak', text: '<strong>Fact established:</strong> Army is depleted and weak after recent conflict.' },
+                    { rule: 'R2', text: '<strong>Rule R2 fires:</strong> IF enemy approaching AND army weak → Seek alliance. Deploying a weak army (R1 conditions not met) would be reckless.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> A weak army cannot face the enemy alone. Seek alliances to combine strength. Surrender is premature when diplomacy is still possible.' }
+                ]
+            },
+            {
+                text: "The kingdom's treasury is running dangerously low. However, merchant caravans still travel freely through your lands, and the trade roads are safe.",
+                facts: ['treasury_low', 'trade_routes_open'],
+                correctConclusion: 'increase_trade_tax',
+                firedRules: ['R6'],
+                domain: 'Economy',
+                difficulty: 'easy',
+                choices: [
+                    { label: 'Increase trade taxation on caravans passing through', conclusion: 'increase_trade_tax' },
+                    { label: 'Invest in building local workshops and factories', conclusion: 'develop_local_industry' },
+                    { label: 'Borrow gold from the merchant guild', conclusion: 'borrow_gold' },
+                    { label: 'Reduce the royal guard to save on wages', conclusion: 'reduce_guard' }
+                ],
+                explanation: [
+                    { fact: 'treasury_low', text: '<strong>Fact established:</strong> Kingdom treasury is critically low.' },
+                    { fact: 'trade_routes_open', text: '<strong>Fact established:</strong> Trade routes are open and merchant traffic flows.' },
+                    { rule: 'R6', text: '<strong>Rule R6 fires:</strong> IF treasury low AND trade routes open → Increase trade taxation. Open routes mean there is traffic to tax.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> With active trade routes, modest taxation increases provide immediate revenue. R7 (local industry) doesn\'t apply since routes are open.' }
+                ]
+            },
+            {
+                text: "A devastating famine grips the northern villages. People are starving. Fortunately, the royal treasury is well-stocked from years of prosperity.",
+                facts: ['famine', 'treasury_high'],
+                correctConclusion: 'import_food',
+                firedRules: ['R8'],
+                domain: 'Economy',
+                difficulty: 'easy',
+                choices: [
+                    { label: 'Use treasury funds to import food from foreign traders', conclusion: 'import_food' },
+                    { label: 'Ration existing food supplies strictly', conclusion: 'ration_supplies' },
+                    { label: 'Force wealthy nobles to share their stores', conclusion: 'force_nobles' },
+                    { label: 'Wait for the next harvest season', conclusion: 'wait_harvest' }
+                ],
+                explanation: [
+                    { fact: 'famine', text: '<strong>Fact established:</strong> Famine has struck the northern villages.' },
+                    { fact: 'treasury_high', text: '<strong>Fact established:</strong> Treasury is well-stocked with gold.' },
+                    { rule: 'R8', text: '<strong>Rule R8 fires:</strong> IF famine AND treasury high → Import food. You have the funds to buy what\'s needed.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> R9 (rationing) applies when treasury is low. Since we have funds, importing food is faster and more effective than rationing.' }
+                ]
+            },
+            {
+                text: "The people grow restless. Morale across the kingdom has plummeted. Tax collectors report that citizens view the current tax rate as burdensome and unfair.",
+                facts: ['morale_low', 'taxes_high'],
+                correctConclusion: 'lower_taxes',
+                firedRules: ['R10'],
+                domain: 'People',
+                difficulty: 'medium',
+                choices: [
+                    { label: 'Lower taxes temporarily to ease the burden', conclusion: 'lower_taxes' },
+                    { label: 'Organize a grand festival to boost spirits', conclusion: 'host_festival' },
+                    { label: 'Increase patrols to suppress any unrest', conclusion: 'increase_patrols' },
+                    { label: 'Issue a royal decree demanding loyalty', conclusion: 'decree_loyalty' }
+                ],
+                explanation: [
+                    { fact: 'morale_low', text: '<strong>Fact established:</strong> Kingdom morale is critically low.' },
+                    { fact: 'taxes_high', text: '<strong>Fact established:</strong> Tax rates are perceived as high and burdensome.' },
+                    { rule: 'R10', text: '<strong>Rule R10 fires:</strong> IF morale low AND taxes high → Lower taxes. Addresses the root economic cause of unrest.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> R11 (festival) only applies when taxes are fair. The root cause here is economic hardship, which a festival cannot fix. Lowering taxes addresses the direct grievance.' }
+                ]
+            },
+            {
+                text: "A mysterious plague has broken out in the eastern provinces. Your court physician reports that the Royal College of Healers stands ready to serve.",
+                facts: ['plague', 'healers_available'],
+                correctConclusion: 'deploy_healers',
+                firedRules: ['R12'],
+                domain: 'People',
+                difficulty: 'medium',
+                choices: [
+                    { label: 'Deploy healers immediately to the affected towns', conclusion: 'deploy_healers' },
+                    { label: 'Quarantine the entire eastern region', conclusion: 'quarantine_region' },
+                    { label: 'Pray at the temple and await divine intervention', conclusion: 'pray' },
+                    { label: 'Evacuate the eastern provinces entirely', conclusion: 'evacuate' }
+                ],
+                explanation: [
+                    { fact: 'plague', text: '<strong>Fact established:</strong> Plague outbreak detected in eastern provinces.' },
+                    { fact: 'healers_available', text: '<strong>Fact established:</strong> Trained healers are available through the Royal College.' },
+                    { rule: 'R12', text: '<strong>Rule R12 fires:</strong> IF plague AND healers available → Deploy healers. Medical treatment is the priority when resources exist.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> R13 (quarantine) is a fallback when no healers exist. Since healers are available, active treatment is preferred over isolation alone.' }
+                ]
+            },
+            {
+                text: "Border skirmishes erupt along the northern frontier. However, your ambassador reports that diplomatic relations with the northern kingdom remain cordial and their king seems open to discussion.",
+                facts: ['border_skirmish', 'diplomatic_relations_good'],
+                correctConclusion: 'negotiate_peace',
+                firedRules: ['R4'],
+                domain: 'Diplomacy',
+                difficulty: 'medium',
+                choices: [
+                    { label: 'Negotiate a formal peace treaty through diplomacy', conclusion: 'negotiate_peace' },
+                    { label: 'Send reinforcements to crush them at the border', conclusion: 'reinforce_border' },
+                    { label: 'Launch a preemptive invasion', conclusion: 'preemptive_invasion' },
+                    { label: 'Ignore the skirmishes as minor incidents', conclusion: 'ignore' }
+                ],
+                explanation: [
+                    { fact: 'border_skirmish', text: '<strong>Fact established:</strong> Border skirmishes occurring along northern frontier.' },
+                    { fact: 'diplomatic_relations_good', text: '<strong>Fact established:</strong> Diplomatic relations with northern kingdom are good.' },
+                    { rule: 'R4', text: '<strong>Rule R4 fires:</strong> IF border skirmish AND diplomatic relations good → Negotiate peace treaty. Good relations make diplomacy viable.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> R5 (reinforce border) applies when relations are poor. Since diplomacy is possible, it avoids costly conflict. Negotiation preserves the existing good relationship.' }
+                ]
+            },
+            {
+                text: "A neighboring kingdom offers a royal marriage between their prince and your princess. Your realm has been struggling with isolation and could greatly benefit from a strong ally.",
+                facts: ['royal_marriage_offer', 'kingdom_needs_ally'],
+                correctConclusion: 'accept_marriage',
+                firedRules: ['R14'],
+                domain: 'Diplomacy',
+                difficulty: 'medium',
+                choices: [
+                    { label: 'Accept the marriage alliance to strengthen ties', conclusion: 'accept_marriage' },
+                    { label: 'Decline politely to maintain independence', conclusion: 'decline_politely' },
+                    { label: 'Counter-offer with a trade agreement instead', conclusion: 'counter_trade' },
+                    { label: 'Demand a kingdom as dowry to show strength', conclusion: 'demand_dowry' }
+                ],
+                explanation: [
+                    { fact: 'royal_marriage_offer', text: '<strong>Fact established:</strong> Neighboring kingdom proposes a royal marriage.' },
+                    { fact: 'kingdom_needs_ally', text: '<strong>Fact established:</strong> Your kingdom is isolated and needs allies.' },
+                    { rule: 'R14', text: '<strong>Rule R14 fires:</strong> IF royal marriage offer AND kingdom needs ally → Accept marriage. Alliance through marriage is a proven diplomatic strategy.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> R15 (decline) applies when the kingdom is already strong. Since you need allies, the marriage alliance solves a critical strategic weakness.' }
+                ]
+            },
+            {
+                text: "The treasury is nearly empty and bandits have seized control of the main trade routes, blocking merchant caravans from reaching your cities.",
+                facts: ['treasury_low', 'trade_routes_blocked'],
+                correctConclusion: 'develop_local_industry',
+                firedRules: ['R7'],
+                domain: 'Economy',
+                difficulty: 'hard',
+                choices: [
+                    { label: 'Increase taxes on the merchants still operating locally', conclusion: 'increase_trade_tax' },
+                    { label: 'Invest in developing local workshops and crafts', conclusion: 'develop_local_industry' },
+                    { label: 'Send the army to clear the trade routes', conclusion: 'clear_routes' },
+                    { label: 'Sell royal artifacts to raise funds', conclusion: 'sell_artifacts' }
+                ],
+                explanation: [
+                    { fact: 'treasury_low', text: '<strong>Fact established:</strong> Treasury is critically low.' },
+                    { fact: 'trade_routes_blocked', text: '<strong>Fact established:</strong> Trade routes are blocked by bandits.' },
+                    { rule: 'R7', text: '<strong>Rule R7 fires:</strong> IF treasury low AND trade routes blocked → Develop local industry. Cannot tax trade that doesn\'t exist.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> R6 (increase trade tax) requires open routes. Since routes are blocked, building self-sufficient local industry is the sustainable solution.' }
+                ]
+            },
+            {
+                text: "There are rumors of a rebellion forming in the western provinces. Your spymaster has identified the rebel leader — a charismatic former general named Lord Ashford.",
+                facts: ['rebellion_brewing', 'leader_identified'],
+                correctConclusion: 'negotiate_rebels',
+                firedRules: ['R16'],
+                domain: 'People',
+                difficulty: 'hard',
+                choices: [
+                    { label: 'Open negotiations with Lord Ashford to address grievances', conclusion: 'negotiate_rebels' },
+                    { label: 'Send assassins to eliminate the rebel leader', conclusion: 'assassinate' },
+                    { label: 'Deploy spies to infiltrate the movement', conclusion: 'infiltrate_spies' },
+                    { label: 'March the army west and crush the rebellion', conclusion: 'crush_rebellion' }
+                ],
+                explanation: [
+                    { fact: 'rebellion_brewing', text: '<strong>Fact established:</strong> Rebellion is brewing in western provinces.' },
+                    { fact: 'leader_identified', text: '<strong>Fact established:</strong> Rebel leader (Lord Ashford) has been identified.' },
+                    { rule: 'R16', text: '<strong>Rule R16 fires:</strong> IF rebellion brewing AND leader identified → Negotiate with rebels. Known leadership enables direct diplomatic resolution.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> R17 (send spies) is for when the leader is unknown. Since Ashford is identified, negotiation can address root causes and potentially avert conflict entirely.' }
+                ]
+            },
+            {
+                text: "A terrible drought has dried up the wells, but your surveyors have discovered a large river flowing just 5 leagues south of the affected farms.",
+                facts: ['drought', 'river_nearby'],
+                correctConclusion: 'build_irrigation',
+                firedRules: ['R18'],
+                domain: 'Economy',
+                difficulty: 'hard',
+                choices: [
+                    { label: 'Build irrigation canals from the river to the farms', conclusion: 'build_irrigation' },
+                    { label: 'Relocate the farms closer to the river', conclusion: 'relocate_farms' },
+                    { label: 'Import water barrels from other regions', conclusion: 'import_water' },
+                    { label: 'Pray for rain at the great temple', conclusion: 'pray_rain' }
+                ],
+                explanation: [
+                    { fact: 'drought', text: '<strong>Fact established:</strong> Severe drought has struck the farming region.' },
+                    { fact: 'river_nearby', text: '<strong>Fact established:</strong> A large river exists 5 leagues south.' },
+                    { rule: 'R18', text: '<strong>Rule R18 fires:</strong> IF drought AND river nearby → Build irrigation. Provides a permanent water supply solution.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> Irrigation canals address both the immediate drought and future water security. It\'s a sustainable engineering solution rather than a temporary workaround.' }
+                ]
+            },
+            {
+                text: "A plague sweeps through village after village. The Royal College of Healers was disbanded last year due to funding cuts — no trained healers remain in the kingdom.",
+                facts: ['plague', 'no_healers'],
+                correctConclusion: 'quarantine_region',
+                firedRules: ['R13'],
+                domain: 'People',
+                difficulty: 'hard',
+                choices: [
+                    { label: 'Quarantine the affected regions immediately', conclusion: 'quarantine_region' },
+                    { label: 'Deploy soldiers as makeshift healers', conclusion: 'soldier_healers' },
+                    { label: 'Search neighboring kingdoms for healers to hire', conclusion: 'hire_healers' },
+                    { label: 'Allow free movement and hope for herd immunity', conclusion: 'herd_immunity' }
+                ],
+                explanation: [
+                    { fact: 'plague', text: '<strong>Fact established:</strong> Plague is spreading across villages.' },
+                    { fact: 'no_healers', text: '<strong>Fact established:</strong> No trained healers are available in the kingdom.' },
+                    { rule: 'R13', text: '<strong>Rule R13 fires:</strong> IF plague AND no healers → Quarantine. Without healing capability, containment is the only option.' },
+                    { conclusion: true, text: '<strong>Conclusion:</strong> R12 (deploy healers) cannot fire because healers are unavailable. Quarantine prevents spread while the kingdom seeks longer-term medical solutions.' }
+                ]
+            },
+        ];
+
+        // ===== GAME STATE =====
+        let gameState = {
+            difficulty: 'medium',
+            scenarios: [],
+            currentIndex: 0,
+            score: 0,
+            correct: 0,
+            streak: 0,
+            maxStreak: 0,
+            answered: false,
+            inferenceLog: [],
+            logCounter: 0
+        };
+
+        // ===== DIFFICULTY CONFIG =====
+        const diffConfig = {
+            easy: { count: 4, points: 10, label: 'Apprentice' },
+            medium: { count: 8, points: 15, label: 'Knight' },
+            hard: { count: 12, points: 25, label: 'Monarch' }
+        };
+
+        // ===== INIT =====
+        function init() {
+            renderKB();
+            setupTabs();
+            setupDifficulty();
+        }
+
+        // ===== TAB NAVIGATION =====
+        function setupTabs() {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById('panel' + capitalize(tab.dataset.tab)).classList.add('active');
+                });
+            });
+        }
+
+        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+        // ===== DIFFICULTY =====
+        function setupDifficulty() {
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    gameState.difficulty = btn.dataset.diff;
+                });
+            });
+        }
+
+        // ===== RENDER KB =====
+        function renderKB() {
+            const grid = document.getElementById('kbGrid');
+            grid.innerHTML = knowledgeBase.map(rule => `
+                <div class="kb-rule">
+                    <div class="kb-rule-id">${rule.id} · ${rule.category}</div>
+                    <div class="kb-rule-if">IF ${rule.conditions.map(c => `<code>${c}</code>`).join(' AND ')}</div>
+                    <div class="kb-rule-then">THEN → <code>${rule.conclusion}</code></div>
+                </div>
+            `).join('');
+        }
+
+        // ===== START GAME =====
+        function startGame() {
+            const diff = gameState.difficulty;
+            const config = diffConfig[diff];
+
+            // Select scenarios matching difficulty, then fill with others
+            let pool = shuffleArray([...allScenarios]);
+
+            // Prioritize matching difficulty
+            const matching = pool.filter(s => s.difficulty === diff);
+            const others = pool.filter(s => s.difficulty !== diff);
+            const combined = [...shuffleArray(matching), ...shuffleArray(others)];
+
+            gameState.scenarios = combined.slice(0, config.count);
+            gameState.currentIndex = 0;
+            gameState.score = 0;
+            gameState.correct = 0;
+            gameState.streak = 0;
+            gameState.maxStreak = 0;
+            gameState.answered = false;
+            gameState.inferenceLog = [];
+            gameState.logCounter = 0;
+
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
+
+            updateStats();
+            renderScenario();
+            addLogEntry('info', '🎮', `New campaign started — <strong>${config.label}</strong> difficulty (${config.count} scenarios)`);
+        }
+
+        // ===== RENDER SCENARIO =====
+        function renderScenario() {
+            const scenario = gameState.scenarios[gameState.currentIndex];
+            const total = gameState.scenarios.length;
+
+            document.getElementById('scenarioText').innerHTML = scenario.text;
+            document.getElementById('scenarioMeta').innerHTML = `
+                <span>📂 ${scenario.domain}</span>
+                <span>⚡ ${scenario.difficulty.toUpperCase()}</span>
+                <span>📏 ${scenario.facts.length} facts</span>
+                <span>🔧 ${scenario.firedRules.length} rule(s)</span>
+            `;
+
+            // Shuffle choices
+            const shuffled = shuffleArray([...scenario.choices]);
+            const letters = ['A', 'B', 'C', 'D'];
+            document.getElementById('choicesGrid').innerHTML = shuffled.map((c, i) => `
+                <button class="choice-btn" id="choice${i}" onclick="makeChoice('${c.conclusion}', this)">
+                    <span class="choice-letter">${letters[i]}</span>
+                    <span>${c.label}</span>
+                </button>
+            `).join('');
+
+            // Hide feedback
+            document.getElementById('feedbackBox').className = 'feedback-box';
+            document.getElementById('feedbackBox').classList.remove('show');
+            document.getElementById('explanationChain').style.display = 'none';
+            document.getElementById('btnNext').style.display = 'none';
+
+            gameState.answered = false;
+            updateProgress();
+            updateStats();
+
+            // Log inference start
+            addLogEntry('info', '🔍', `Scenario ${gameState.currentIndex + 1}/${total}: Evaluating facts [${scenario.facts.join(', ')}]`);
+        }
+
+        // ===== MAKE CHOICE =====
+        function makeChoice(conclusion, btn) {
+            if (gameState.answered) return;
+            gameState.answered = true;
+
+            const scenario = gameState.scenarios[gameState.currentIndex];
+            const isCorrect = conclusion === scenario.correctConclusion;
+            const config = diffConfig[gameState.difficulty];
+
+            // Highlight
+            document.querySelectorAll('.choice-btn').forEach(b => {
+                b.style.pointerEvents = 'none';
+                if (b.textContent.includes(scenario.choices.find(c => c.conclusion === scenario.correctConclusion)?.label || '')) {
+                    // We'll handle highlighting below
+                }
+            });
+
+            // Find and highlight correct button
+            document.querySelectorAll('.choice-btn').forEach(b => {
+                const choiceText = b.querySelector('span:last-child').textContent;
+                const correctChoice = scenario.choices.find(c => c.conclusion === scenario.correctConclusion);
+                if (correctChoice && choiceText === correctChoice.label) {
+                    b.classList.add('correct');
+                }
+            });
+
+            if (!isCorrect) {
+                btn.classList.add('incorrect');
+            }
+
+            // Update score
+            if (isCorrect) {
+                const streakBonus = Math.min(gameState.streak, 5) * 5;
+                const points = config.points + streakBonus;
+                gameState.score += points;
+                gameState.correct++;
+                gameState.streak++;
+                gameState.maxStreak = Math.max(gameState.maxStreak, gameState.streak);
+
+                addLogEntry('fire', '✅', `Rule <strong>${scenario.firedRules.join(', ')}</strong> correctly identified! +${points} pts${streakBonus > 0 ? ` (includes ${streakBonus} streak bonus)` : ''}`);
+            } else {
+                gameState.streak = 0;
+                addLogEntry('error', '❌', `Incorrect. Expected conclusion: <strong>${scenario.correctConclusion}</strong>. Rules that should fire: <strong>${scenario.firedRules.join(', ')}</strong>`);
+            }
+
+            // Show feedback
+            const fb = document.getElementById('feedbackBox');
+            fb.className = `feedback-box show ${isCorrect ? 'success' : 'failure'}`;
+            document.getElementById('feedbackTitle').innerHTML = isCorrect
+                ? '✅ Excellent Counsel, Advisor!'
+                : '❌ The Realm Suffered From This Decision';
+            document.getElementById('feedbackText').innerHTML = isCorrect
+                ? `Your recommendation matched the expert system's analysis. The inference engine fired rule(s) <strong>${scenario.firedRules.join(', ')}</strong> based on the given facts.`
+                : `The optimal decision was <strong>${scenario.correctConclusion.replace(/_/g, ' ')}</strong>. Rule(s) <strong>${scenario.firedRules.join(', ')}</strong> should have been applied based on the facts presented.`;
+
+            // Show explanation chain
+            const chainDiv = document.getElementById('explanationChain');
+            chainDiv.style.display = 'block';
+            document.getElementById('chainSteps').innerHTML = scenario.explanation.map((step, i) => `
+                <div class="chain-step">
+                    <div class="chain-node">${i + 1}</div>
+                    <div class="chain-content">${step.text}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('btnNext').style.display = 'inline-flex';
+            updateStats();
+
+            // Log forward chaining trace
+            scenario.explanation.forEach((step, i) => {
+                setTimeout(() => {
+                    if (step.fact) addLogEntry('info', '📌', `Working Memory updated: <strong>${step.fact}</strong> = true`);
+                    else if (step.rule) addLogEntry('fire', '⚡', `Rule <strong>${step.rule}</strong> fired → ${scenario.correctConclusion.replace(/_/g, ' ')}`);
+                    else if (step.conclusion) addLogEntry('info', '🎯', `Conclusion reached: <strong>${scenario.correctConclusion.replace(/_/g, ' ')}</strong>`);
+                }, (i + 1) * 150);
+            });
+        }
+
+        // ===== NEXT SCENARIO =====
+        function nextScenario() {
+            gameState.currentIndex++;
+            if (gameState.currentIndex >= gameState.scenarios.length) {
+                endGame();
+            } else {
+                renderScenario();
+            }
+        }
+
+        // ===== END GAME =====
+        function endGame() {
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'block';
+
+            const total = gameState.scenarios.length;
+            const pct = Math.round((gameState.correct / total) * 100);
+
+            let title, emoji;
+            if (pct >= 90) { title = 'Legendary Advisor!'; emoji = '👑'; }
+            else if (pct >= 70) { title = 'Wise Counselor!'; emoji = '🏆'; }
+            else if (pct >= 50) { title = 'Promising Apprentice!'; emoji = '⚔️'; }
+            else { title = 'The Kingdom Needs Better Counsel...'; emoji = '📚'; }
+
+            document.getElementById('gameOverTitle').textContent = `${emoji} ${title}`;
+            document.getElementById('gameOverText').innerHTML = `You correctly advised the ruler on <strong>${gameState.correct}</strong> of <strong>${total}</strong> scenarios (${pct}%).`;
+
+            document.getElementById('finalStats').innerHTML = `
+                <div class="final-stat">
+                    <div class="value" style="color: var(--accent-gold)">${gameState.score}</div>
+                    <div class="label">Total Score</div>
+                </div>
+                <div class="final-stat">
+                    <div class="value" style="color: var(--accent-emerald)">${pct}%</div>
+                    <div class="label">Accuracy</div>
+                </div>
+                <div class="final-stat">
+                    <div class="value" style="color: var(--accent-blue)">${gameState.correct}/${total}</div>
+                    <div class="label">Correct</div>
+                </div>
+                <div class="final-stat">
+                    <div class="value" style="color: var(--accent-rose)">${gameState.maxStreak}</div>
+                    <div class="label">Best Streak</div>
+                </div>
+            `;
+
+            addLogEntry('info', '🏁', `Campaign complete! Score: <strong>${gameState.score}</strong>, Accuracy: <strong>${pct}%</strong>`);
+        }
+
+        // ===== RESET GAME =====
+        function resetGame() {
+            document.getElementById('startScreen').style.display = 'block';
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            gameState.score = 0;
+            gameState.correct = 0;
+            gameState.streak = 0;
+            gameState.maxStreak = 0;
+            updateStats();
+        }
+
+        // ===== UPDATE HELPERS =====
+        function updateStats() {
+            const total = gameState.scenarios.length || 0;
+            document.getElementById('statScenario').textContent = total > 0 ? `${gameState.currentIndex + 1} / ${total}` : '0 / 0';
+            document.getElementById('statScore').textContent = gameState.score;
+            document.getElementById('statCorrect').textContent = gameState.correct;
+            document.getElementById('statStreak').textContent = gameState.streak;
+        }
+
+        function updateProgress() {
+            const total = gameState.scenarios.length;
+            const pct = total > 0 ? Math.round((gameState.currentIndex / total) * 100) : 0;
+            document.getElementById('progressValue').textContent = pct + '%';
+            document.getElementById('progressFill').style.width = pct + '%';
+        }
+
+        // ===== LOG =====
+        function addLogEntry(type, icon, message) {
+            gameState.logCounter++;
+            const entry = { type, icon, message, id: gameState.logCounter };
+            gameState.inferenceLog.push(entry);
+
+            const container = document.getElementById('logContainer');
+            // Remove empty state
+            const empty = container.querySelector('.empty-state');
+            if (empty) empty.remove();
+
+            const div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+            div.innerHTML = `
+                <span class="log-timestamp">#${entry.id}</span>
+                <span class="log-icon">${icon}</span>
+                <span class="log-message">${message}</span>
+            `;
+            container.prepend(div);
+
+            // Limit displayed entries
+            while (container.children.length > 100) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // ===== UTILS =====
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // ===== BOOT =====
+        init();
+    </script>
+</body>
+</html>

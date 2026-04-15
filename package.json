@@ -1,0 +1,11 @@
+{
+  "name": "kingdom-advisor-expert-system",
+  "version": "1.0.0",
+  "description": "Kingdom Advisor - An interactive expert system game demonstrating AI decision support concepts",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve .",
+    "build": "echo 'Static site - no build step required'"
+  }
+}
